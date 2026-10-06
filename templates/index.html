@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRỘN ĐỀ THI QMIX - Hệ Thống Trộn Đề Chuẩn</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+          },
+          colors: {
+            theme: {
+              DEFAULT: '#00a896',
+              dark: '#007a6c',
+              darker: '#006256',
+              light: '#e6f7f5',
+              subtle: '#f0fbf9',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- KaTeX CSS & JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+  <style>
+    body { 
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.42857;
+      color: #333333;
+    }
+    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #b2dfdb; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #80cbc4; }
+    .math-content img {
+      display: inline-block !important;
+      vertical-align: middle !important;
+      max-height: 2.2rem !important;
+      margin: 0 2px !important;
+    }
+    .bg-custom-theme {
+      background-color: #00a896;
+    }
+    .bg-teal-dark {
+      background-color: #007a6c;
+    }
+    .bg-teal-dark:hover {
+      background-color: #006256;
+    }
+  </style>
+</head>
+<body class="bg-[#f4f7f6] text-[#333333] min-h-screen flex flex-col">
+
+  <!-- TOP HEADER TINH GỌN -->
+  <header class="bg-custom-theme text-white px-6 py-3 sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      
+      <!-- Logo & Tiêu đề -->
+      <div class="flex items-center gap-3">
+        <div class="bg-white/20 text-white p-2 rounded-xl backdrop-blur-sm border border-white/30">
+          <i data-lucide="layers" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+            TRỘN ĐỀ THI QMIX
+            <span class="bg-white/20 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full border border-white/30">v2.0</span>
+          </h1>
+          <p class="text-[12px] text-teal-100">Chuẩn hóa cấu trúc & trộn đề thi trắc nghiệm A4</p>
+        </div>
+      </div>
+
+      <!-- Thống kê & Nút Trộn đề Header -->
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex items-center gap-2 text-xs">
+          <div class="bg-white/15 border border-white/25 rounded-lg px-3 py-1 text-center backdrop-blur-sm">
+            <span class="text-teal-100 text-[11px]">Số nhóm:</span>
+            <span id="banner-groups" class="font-bold text-white ml-1">0</span>
+          </div>
+          <div class="bg-white/15 border border-white/25 rounded-lg px-3 py-1 text-center backdrop-blur-sm">
+            <span class="text-teal-100 text-[11px]">Tổng số câu:</span>
+            <span id="banner-questions" class="font-bold text-white ml-1">0</span>
+          </div>
+        </div>
+
+        <button id="btn-export-top" onclick="triggerMixing()" disabled class="bg-teal-dark hover:bg-[#006256] text-white disabled:opacity-40 disabled:cursor-not-allowed px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all">
+          <i data-lucide="sparkles" class="w-4 h-4 text-teal-200"></i> Bắt đầu trộn
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- NỘI DUNG CHÍNH (GRID 12 CỘT) -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+    <!-- CỘT TRÁI (5/12): GHIM CỐ ĐỊNH, NÚT TRÊN VÀ DƯỚI RÕ RÀNG -->
+    <div class="lg:col-span-5 flex flex-col lg:sticky lg:top-16 self-start bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden lg:max-h-[calc(100vh-5rem)]">
+
+      <!-- 1. PHẦN ĐẦU CỐ ĐỊNH: NÚT TẢI FILE ĐỀ CẦN TRỘN -->
+      <div class="p-4 bg-white border-b border-slate-100 shadow-sm z-20 flex flex-col items-center">
+        <input id="file-input" type="file" accept=".docx" class="hidden" onchange="handleFileUpload(event)">
+        
+        <button id="btn-upload-trigger" type="button" onclick="triggerReupload()" class="w-full max-w-xs bg-custom-theme hover:bg-[#008b7c] active:scale-[0.98] text-white py-2.5 px-6 rounded-full font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-teal-500/20 transition-all">
+          <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+          <span id="btn-upload-text">Đề cần trộn (.docx)</span>
+        </button>
+
+        <!-- Thẻ thông tin rút gọn khi đã chọn file -->
+        <div id="file-info-badge" class="hidden mt-2.5 w-full bg-theme-subtle border border-teal-200 rounded-xl px-3 py-1.5 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-1.5 overflow-hidden">
+            <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-[#00a896] shrink-0"></i>
+            <span id="loaded-filename" class="font-bold text-slate-800 truncate max-w-[200px]">ten_de_thi.docx</span>
+          </div>
+          <span class="text-[11px] text-[#007a6c] font-bold shrink-0">
+            <span id="stat-total-q">0</span> câu (<span id="stat-total-g">0</span> nhóm)
+          </span>
+        </div>
+      </div>
+
+      <!-- 2. PHẦN THÂN GIỮA CUỘN NỘI BỘ (THÔNG TIN, MÃ ĐỀ & HƯỚNG DẪN) -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scroll">
+
+        <!-- THÔNG TIN TIÊU ĐỀ IN ẤN -->
+        <div class="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50/50">
+          <div class="bg-custom-theme px-3.5 py-2 text-white flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider">
+            <i data-lucide="heading" class="w-3.5 h-3.5"></i> Thông tin chung
+          </div>
+          <div class="p-3 grid grid-cols-2 gap-2 text-xs bg-white">
+            <div class="col-span-2 sm:col-span-1">
+              <label class="text-[11px] font-semibold text-slate-500 block mb-0.5">Sở / Phòng GD:</label>
+              <input id="info-so-gd" type="text" value="SỞ GD&ĐT TP CẦN THƠ" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#00a896] outline-none text-xs text-slate-800 font-medium">
+            </div>
+
+            <div class="col-span-2 sm:col-span-1">
+              <label class="text-[11px] font-semibold text-slate-500 block mb-0.5">Trường:</label>
+              <input id="info-truong" type="text" value="TRƯỜNG THCS VÀ THPT QUỐC TẾ HÒA BÌNH" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#00a896] outline-none text-xs text-slate-800 font-medium">
+            </div>
+
+            <div class="col-span-2 sm:col-span-1">
+              <label class="text-[11px] font-semibold text-slate-500 block mb-0.5">Kỳ thi:</label>
+              <input id="info-ki-thi" type="text" value="KIỂM TRA GIỮA KỲ I" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#00a896] outline-none text-xs text-slate-800 font-medium">
+            </div>
+
+            <div class="col-span-2 sm:col-span-1">
+              <label class="text-[11px] font-semibold text-slate-500 block mb-0.5">Năm học:</label>
+              <input id="info-nam-hoc" type="text" value="NĂM HỌC 2026 - 2027" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#00a896] outline-none text-xs text-slate-800 font-medium">
+            </div>
+
+            <div class="col-span-2 sm:col-span-1">
+              <label class="text-[11px] font-semibold text-slate-500 block mb-0.5">Môn học:</label>
+              <input id="info-mon-hoc" type="text" value="MÔN: TOÁN - LỚP 12" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#00a896] outline-none text-xs text-slate-800 font-medium">
+            </div>
+
+            <div class="col-span-2 sm:col-span-1">
+              <label class="text-[11px] font-semibold text-slate-500 block mb-0.5">Thời gian làm bài:</label>
+              <input id="info-thoi-gian" type="text" value="50 phút" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#00a896] outline-none text-xs text-slate-800 font-medium">
+            </div>
+          </div>
+        </div>
+
+        <!-- CẤU HÌNH SỐ LƯỢNG MÃ ĐỀ -->
+        <div class="rounded-2xl border border-slate-200 overflow-hidden bg-white">
+          <div class="bg-custom-theme px-3.5 py-2 text-white flex items-center justify-between text-xs font-bold uppercase tracking-wider">
+            <span class="flex items-center gap-1.5"><i data-lucide="sliders" class="w-3.5 h-3.5"></i> Cấu hình mã đề</span>
+            <button type="button" onclick="autoFillDefaultCodes()" class="text-[11px] text-teal-100 hover:text-white capitalize underline">
+              Gợi ý 101, 102...
+            </button>
+          </div>
+
+          <div class="p-3 space-y-2.5 text-xs">
+            <div class="flex items-center justify-between gap-3">
+              <label class="font-semibold text-slate-700 shrink-0">Số lượng mã đề:</label>
+              <div class="relative w-28">
+                <input 
+                  id="input-num-variants" 
+                  type="number" 
+                  min="1" 
+                  max="50" 
+                  step="1" 
+                  value="4" 
+                  oninput="onNumVariantsChange(this.value)"
+                  class="w-full px-2.5 py-1 rounded-lg border border-slate-200 focus:border-[#00a896] outline-none text-xs font-bold text-slate-800 bg-slate-50"
+                />
+                <span class="absolute right-2 top-1 text-[11px] text-slate-400">mã</span>
+              </div>
+            </div>
+
+            <!-- Danh sách mã đề -->
+            <div id="exam-codes-list" class="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto pr-1 custom-scroll"></div>
+          </div>
+        </div>
+
+        <!-- KHUNG HƯỚNG DẪN SOẠN ĐỀ (COLLAPSIBLE) -->
+        <div class="rounded-2xl border border-slate-200 overflow-hidden text-xs bg-white">
+          <button type="button" onclick="toggleGuide()" class="w-full px-3.5 py-2 flex items-center justify-between bg-custom-theme text-white hover:bg-[#007a6c] transition-colors font-bold text-left">
+            <span class="flex items-center gap-1.5 text-xs uppercase tracking-wider">
+              <i data-lucide="book-open-check" class="w-3.5 h-3.5"></i> Hướng dẫn soạn đề chuẩn
+            </span>
+            <i id="guide-arrow" data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-300"></i>
+          </button>
+
+          <div id="guide-content" class="p-3.5 space-y-3.5 bg-white border-t border-slate-100">
+            <!-- 1. HƯỚNG DẪN ĐẶT TÊN NHÓM -->
+            <div class="space-y-1.5">
+              <p class="font-bold text-[11px] uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="tags" class="w-3.5 h-3.5 text-[#00a896]"></i> HƯỚNG DẪN ĐẶT TÊN NHÓM
+              </p>
+              <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-[12px] leading-relaxed text-slate-700">
+                <div><b class="text-[#007a6c] font-bold">&lt;#q0&gt;</b>: Không trộn câu, không trộn đáp án và không xuất đáp án Excel.</div>
+                <div><b class="text-[#007a6c] font-bold">&lt;#q1&gt;</b>: Chỉ hoán vị câu hỏi; giữ nguyên thứ tự đáp án.</div>
+                <div><b class="text-[#007a6c] font-bold">&lt;#q2&gt;</b>: Giữ nguyên câu hỏi; chỉ hoán vị các đáp án.</div>
+                <div><b class="text-[#007a6c] font-bold">&lt;#q3&gt;</b>: Hoán vị đồng thời cả câu hỏi và các phương án.</div>
+              </div>
+            </div>
+
+            <!-- 2. HƯỚNG DẪN CẤU TRÚC ĐỀ -->
+            <div class="space-y-1.5 pt-2 border-t border-slate-100">
+              <p class="font-bold text-[11px] uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 text-[#00a896]"></i> HƯỚNG DẪN CẤU TRÚC ĐỀ
+              </p>
+              <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-[12px] leading-relaxed text-slate-700">
+                <div class="flex items-start gap-1.5">
+                  <span class="font-bold shrink-0">1 -</span>
+                  <span>Câu hỏi phải bắt đầu bằng chữ "Câu", ví dụ: Câu 1, Câu 2,... (Hoặc chữ "Question", ví dụ: Question 1, Question 2,...).</span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                  <span class="font-bold shrink-0">2 -</span>
+                  <span>Phải xuống dòng (gõ Enter) trước khi gõ các đáp án.</span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                  <span class="font-bold shrink-0">3 -</span>
+                  <span>Các đáp án bắt buộc phải được bắt đầu bằng các từ "A.","B.", "C.", "D.". Nếu cần cố định đáp án nào thì ta đặt thêm dấu # liền trước, ví dụ: "#A.".</span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                  <span class="font-bold shrink-0">4 -</span>
+                  <span>Mỗi đáp án nên nằm trên một dòng.</span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                  <span class="font-bold shrink-0">5 -</span>
+                  <span>Đáp án đúng bạn phải gạch chân toàn bộ đáp án (ví dụ: <u>A. Hà Nội</u>, <u>#B. Thành phố Cần Thơ</u>).</span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                  <span class="font-bold shrink-0">6 -</span>
+                  <span>Các câu hỏi và đáp án có Hình ảnh thì Hình ảnh cần để ở chế độ Inline With Text để sau này đề hoán vị, hình ảnh không bị nhảy lung tung.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 3. PHẦN ĐÁY CỐ ĐỊNH: NÚT TRỘN ĐỀ VÀ TẢI ZIP -->
+      <div class="p-4 bg-white border-t border-slate-100 shadow-inner z-20 flex flex-col items-center">
+        <button id="btn-mix-main" onclick="triggerMixing()" disabled class="w-full max-w-xs bg-custom-theme hover:bg-[#008b7c] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-white py-3 px-6 rounded-full font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25 transition-all">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Trộn đề & Tải ZIP</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- CỘT PHẢI (7/12): KHUNG SOÁT ĐỀ TRỰC QUAN -->
+    <div class="lg:col-span-7 space-y-3">
+      <!-- Tiêu đề khung ghim sticky -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-16 z-20">
+        <div class="bg-custom-theme px-4 py-2.5 text-white flex items-center justify-between">
+          <h2 class="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="file-check" class="w-4 h-4"></i> Khung soát đề trực quan
+          </h2>
+          <span id="preview-count" class="text-xs bg-white/20 text-white border border-white/30 px-2.5 py-0.5 rounded-full font-semibold">
+            Chưa nạp file
+          </span>
+        </div>
+      </div>
+
+      <!-- Danh sách câu hỏi bung dài tự nhiên -->
+      <div id="questions-container" class="space-y-3 w-full pb-8">
+        <div id="empty-state" class="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center flex flex-col items-center justify-center space-y-2">
+          <div class="w-12 h-12 bg-teal-50 text-[#00a896] rounded-full flex items-center justify-center">
+            <i data-lucide="file-question" class="w-6 h-6"></i>
+          </div>
+          <p class="font-bold text-slate-700 text-sm">Chưa có dữ liệu đề thi</p>
+          <p class="text-xs text-slate-400 max-w-sm leading-relaxed">
+            Nhấn nút "Đề cần trộn" ở cột trái để nạp tệp Word (.docx). Hệ thống sẽ bóc tách các câu hỏi, kiểm tra đáp án đúng và hiển thị chi tiết tại đây[cite: 14].
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- CHÂN TRANG (FOOTER) THÔNG TIN LIÊN HỆ & BẢN QUYỀN -->
+  <footer class="mt-auto py-4 bg-white border-t border-slate-200 text-center text-[#333333] text-[13px] leading-relaxed space-y-0.5">
+    <div>
+      <span class="hover:text-[#00a896] cursor-pointer font-medium">Hướng dẫn</span>
+      <span class="mx-1 text-slate-400">•</span>
+      <span>Email: <a href="mailto:nhicnttcantho@gmail.com" class="hover:text-[#00a896]">nhicnttcantho@gmail.com</a></span>
+      <span class="mx-1 text-slate-400">•</span>
+      <span>Zalo: <a href="tel:0917809488" class="hover:text-[#00a896]">0917.809.488</a></span>
+    </div>
+    <div class="text-[12px] text-slate-500 font-medium">
+      Copyright © 2026 | QMIX
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT XỬ LÝ FRONTEND -->
+  <script>
+    lucide.createIcons();
+
+    let currentFileId = null;
+    let currentOriginalFilename = null;
+
+    renderExamCodeInputs(4);
+
+    function toggleGuide() {
+      const content = document.getElementById('guide-content');
+      const arrow = document.getElementById('guide-arrow');
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        arrow.classList.remove('rotate-180');
+      } else {
+        content.classList.add('hidden');
+        arrow.classList.add('rotate-180');
+      }
+    }
+
+    function onNumVariantsChange(val) {
+      let num = parseInt(val, 10);
+      if (isNaN(num) || num < 1) num = 1;
+      else if (num > 50) num = 50;
+      renderExamCodeInputs(num);
+    }
+
+    function renderExamCodeInputs(count) {
+      const container = document.getElementById('exam-codes-list');
+      container.innerHTML = '';
+
+      for (let i = 0; i < count; i++) {
+        const defaultVal = 101 + i;
+        const div = document.createElement('div');
+        div.className = 'relative flex items-center';
+        div.innerHTML = `
+          <span class="absolute left-2.5 text-[11px] font-bold text-slate-400">Đề ${i + 1}:</span>
+          <input 
+            type="text" 
+            class="exam-code-item w-full pl-12 pr-2 py-1.5 rounded-lg border border-slate-200 focus:border-[#00a896] outline-none text-xs font-bold text-[#333333] bg-white" 
+            value="${defaultVal}"
+            placeholder="Mã đề"
+          />
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    function autoFillDefaultCodes() {
+      const inputs = document.querySelectorAll('.exam-code-item');
+      inputs.forEach((input, idx) => {
+        input.value = 101 + idx;
+      });
+    }
+
+    function getExamCodes() {
+      const inputs = document.querySelectorAll('.exam-code-item');
+      const codes = [];
+      inputs.forEach((input, idx) => {
+        let val = input.value.trim();
+        if (!val) val = String(101 + idx);
+        codes.push(val);
+      });
+      return codes;
+    }
+
+    function getExamInfo() {
+      return {
+        so_gd: document.getElementById('info-so-gd').value.trim(),
+        truong: document.getElementById('info-truong').value.trim(),
+        ki_thi: document.getElementById('info-ki-thi').value.trim(),
+        nam_hoc: document.getElementById('info-nam-hoc').value.trim(),
+        mon_hoc: document.getElementById('info-mon-hoc').value.trim(),
+        thoi_gian: document.getElementById('info-thoi-gian').value.trim(),
+      };
+    }
+
+    function triggerReupload() {
+      const fileInput = document.getElementById('file-input');
+      if (fileInput) {
+        fileInput.value = '';
+        fileInput.click();
+      }
+    }
+
+    async function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const container = document.getElementById('questions-container');
+      container.innerHTML = `
+        <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center flex flex-col items-center justify-center space-y-2">
+          <div class="animate-spin text-[#00a896] mb-1"><i data-lucide="loader-2" class="w-7 h-7"></i></div>
+          <p class="text-xs font-bold text-slate-700">Đang phân tích cấu trúc đề thi và công thức toán...</p>
+        </div>
+      `;
+      lucide.createIcons();
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const result = await res.json();
+
+        if (!result.success) {
+          alert('Lỗi: ' + (result.detail || 'Không thể đọc file'));
+          return;
+        }
+
+        currentFileId = result.file_id;
+        currentOriginalFilename = result.filename;
+
+        document.getElementById('file-info-badge').classList.remove('hidden');
+        document.getElementById('loaded-filename').innerText = result.filename;
+        document.getElementById('stat-total-q').innerText = result.total_questions;
+        document.getElementById('stat-total-g').innerText = result.total_groups;
+        document.getElementById('banner-questions').innerText = result.total_questions;
+        document.getElementById('banner-groups').innerText = result.total_groups;
+        document.getElementById('preview-count').innerText = `${result.total_questions} câu hỏi`;
+
+        document.getElementById('btn-upload-text').innerText = "Đổi đề khác";
+        document.getElementById('btn-export-top').disabled = false;
+        document.getElementById('btn-mix-main').disabled = false;
+
+        renderQuestions(result.data);
+
+      } catch (err) {
+        alert('Lỗi kết nối máy chủ: ' + err.message);
+      }
+    }
+
+    function renderQuestions(groups) {
+      const container = document.getElementById('questions-container');
+      container.innerHTML = '';
+
+      let globalIdx = 1;
+
+      groups.forEach(grp => {
+        if (grp.title) {
+          const groupTitleDiv = document.createElement('div');
+          groupTitleDiv.className = 'bg-teal-50 border border-teal-200 px-3.5 py-2 rounded-xl font-bold text-xs text-[#007a6c] uppercase tracking-wider flex items-center justify-between';
+          groupTitleDiv.innerHTML = `
+            <span>${grp.title}</span>
+            <span class="text-[11px] font-semibold text-teal-700 lowercase">(${grp.questions.length} câu)</span>
+          `;
+          container.appendChild(groupTitleDiv);
+        }
+
+        grp.questions.forEach(q => {
+          const card = document.createElement('div');
+          card.className = 'bg-white rounded-xl p-4 border border-slate-200 shadow-sm space-y-2.5';
+
+          let choicesHtml = '';
+          if (q.choices && q.choices.length > 0) {
+            choicesHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">`;
+            q.choices.forEach(c => {
+              let cleanHtml = c.text ? c.text.replace(/^[A-Da-d][\.:\)]\s*/, '') : '';
+
+              const borderBg = c.is_correct 
+                ? 'border-2 border-[#00a896] bg-teal-50/70 text-slate-900 font-semibold' 
+                : 'border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800';
+
+              const badgeBg = c.is_correct 
+                ? 'bg-custom-theme text-white' 
+                : 'bg-white text-slate-700 border border-slate-300 font-bold';
+              
+              choicesHtml += `
+                <div class="flex items-center gap-2.5 p-2 rounded-lg text-xs ${borderBg}">
+                  <span class="w-5 h-5 rounded-md flex items-center justify-center font-bold text-[11px] shrink-0 ${badgeBg}">
+                    ${c.label}
+                  </span>
+                  <div class="math-content flex-1 font-normal leading-relaxed overflow-x-auto">${cleanHtml}</div>
+                  ${c.is_correct ? '<i data-lucide="check" class="w-4 h-4 text-[#00a896] shrink-0"></i>' : ''}
+                </div>
+              `;
+            });
+            choicesHtml += `</div>`;
+          }
+
+          card.innerHTML = `
+            <div class="flex items-start justify-between gap-2">
+              <span class="bg-slate-800 text-white font-bold px-2 py-0.5 rounded text-[11px]">
+                Câu ${globalIdx}
+              </span>
+              <span class="text-[11px] text-slate-400 font-medium">Gốc: ${q.original_num}</span>
+            </div>
+            <div class="math-content text-xs font-bold text-slate-900 leading-relaxed overflow-x-auto">${q.text}</div>
+            ${choicesHtml}
+          `;
+
+          container.appendChild(card);
+          globalIdx++;
+        });
+      });
+
+      lucide.createIcons();
+
+      // Render công thức toán KaTeX
+      if (window.renderMathInElement) {
+        renderMathInElement(container, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true }
+          ],
+          throwOnError: false
+        });
+      }
+    }
+
+    async function triggerMixing() {
+      if (!currentFileId) return;
+
+      const codes = getExamCodes();
+      if (codes.length === 0) {
+        alert("Vui lòng nhập ít nhất 1 mã đề.");
+        return;
+      }
+
+      const examInfo = getExamInfo();
+
+      const btnTop = document.getElementById('btn-export-top');
+      const btnMain = document.getElementById('btn-mix-main');
+      btnTop.disabled = true;
+      btnMain.disabled = true;
+
+      // Trạng thái khi bấm trộn
+      btnMain.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-teal-100"></i> <span>ĐANG TRỘN ĐỀ...</span>`;
+      lucide.createIcons();
+
+      const formData = new FormData();
+      formData.append('file_id', currentFileId);
+      formData.append('original_filename', currentOriginalFilename);
+      formData.append('exam_codes_json', JSON.stringify(codes));
+      formData.append('exam_info_json', JSON.stringify(examInfo));
+
+      try {
+        const response = await fetch('/api/mix', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('Lỗi khi trộn đề thi');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Bo_de_tron_${codes.length}_ma.zip`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        btnMain.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-200"></i> <span>ĐÃ TẢI VỀ THÀNH CÔNG!</span>`;
+        btnTop.disabled = false;
+        btnMain.disabled = false;
+        lucide.createIcons();
+
+      } catch (err) {
+        alert('Lỗi: ' + err.message);
+        btnTop.disabled = false;
+        btnMain.disabled = false;
+        btnMain.innerHTML = `<i data-lucide="download" class="w-4 h-4"></i> <span>Trộn đề & Tải ZIP</span>`;
+        lucide.createIcons();
+      }
+    }
+  </script>
+</body>
+</html>
